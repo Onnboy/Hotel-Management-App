@@ -1,0 +1,4 @@
+# Apenas pra evitar quaisquer coisa
+.venv/
+
+sistema_reservas.log
