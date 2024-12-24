@@ -84,6 +84,5 @@ Este projeto foi criado como parte do aprendizado sobre gestão de sistemas e ad
  Contato:
 Autor: André Messias
 
-
 GitHub: @Onnboy
 ---   
