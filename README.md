@@ -1,6 +1,5 @@
-//🏆 Badges
-Este projeto foi criado como parte do aprendizado sobre gestão de sistemas e administração de recursos em Python.\\
-
+/🏆 Badges
+Este projeto foi criado como parte do aprendizado sobre gestão de sistemas e administração de recursos em Python.\
 
 # 🏨 **Hotel Management App**
 
