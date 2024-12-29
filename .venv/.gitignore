@@ -2,3 +2,5 @@
 .venv/
 
 sistema_reservas.log
+
+__pycache__

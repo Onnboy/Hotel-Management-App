@@ -14,16 +14,28 @@ def main(page: ft.Page):
 
     gerenciador = GerenciadorDeReservas()
 
+    def exibir_feedback(message, sucess=True):
+        color = "#06D6A0" if sucess else "#EF476F"
+        feedback_bar = ft.Text(message, color="white", size=18, weight="bold")
+        
+        snack_bar = ft.SnackBar(content=feedback_bar, bgcolor=color, duration=3000)
+        page.overlay.append(snack_bar)
+        snack_bar.open = True
+        page.update()
+
     def exibir_opcoes_quartos(tipo: str, cliente: Cliente):
+        tipos_validos = {"Single", "Double", "Suite"}
+        if tipo not in tipos_validos:
+            exibir_feedback(f"Erro: Tipo de quarto '{tipo}' inválido", sucess=False)
+            
         opcoes = {
             "Single": [f"10{i}" for i in range(1, 11)],
             "Double": [f"20{i}" for i in range(1, 11)],
-            "Family": [f"30{i}" for i in range(1, 11)],
+            "suite": [f"30{i}" for i in range(1, 11)],
         }
 
         opcoes_quartos = opcoes.get(tipo, [])
 
-        # Criar dropdown dinâmico para os números de quartos
         dropdown_quartos = ft.Dropdown(
             label="Selecione o número do quarto",
             options=[ft.dropdown.Option(q) for q in opcoes_quartos],
@@ -37,13 +49,16 @@ def main(page: ft.Page):
                 # Marcar o quarto como não disponível
                 quarto = next((q for q in gerenciador.quartos if q.numero == quarto_selecionado), None)
                 if quarto:
+                    cliente.quarto = quarto_selecionado
                     quarto.disponivel = False
                 exibir_feedback(f"Quarto {quarto_selecionado} atribuído ao cliente {cliente.nome}!")
 
-                # Adicionar reserva e retornar à tela de Gerenciar Reservas
+                # Adicionar reserva e retornar à tela de Gerenciar Reservas dos Hóspedes
                 reserva = Reserva(cliente, quarto, "2024-12-01", "2024-12-05")
                 gerenciador.reservas.append(reserva)
                 abrir_tela_reservas()
+            else:
+                exibir_feedback("Erro: Quarto selecionado não encontrado", success=False)
 
         # Exibir diálogo com as opções disponíveis
         dialogo = ft.AlertDialog(
@@ -51,7 +66,7 @@ def main(page: ft.Page):
             content=ft.Column([dropdown_quartos], tight=True),
             actions=[
                 ft.ElevatedButton("Confirmar", on_click=confirmar_selecao),
-            ],
+            ]
         )
         page.overlay.append(dialogo)
         dialogo.open = True
@@ -62,13 +77,13 @@ def main(page: ft.Page):
         subtitulo = ft.Text("Gerenciamento de Reservas", size=20, color="white")
 
         btn_clientes = ft.ElevatedButton(
-            "Gerenciar Clientes", on_click=lambda _: abrir_tela_clientes(), bgcolor="#3A86FF", color="white"
+            "Gerenciar Dados dos Clientes", on_click=lambda _: abrir_tela_clientes(), bgcolor="#3A86FF", color="white"
         )
         btn_reservas = ft.ElevatedButton(
-            "Gerenciar Reservas", on_click=lambda _: abrir_tela_reservas(), bgcolor="#FF006E", color="white"
+            "Gerenciar Reservas dos Hóspedes", on_click=lambda _: abrir_tela_reservas(), bgcolor="#FF006E", color="white"
         )
         btn_quartos = ft.ElevatedButton(
-            "Gerenciar Quartos", on_click=lambda _: abrir_tela_quartos(), bgcolor="#8338EC", color="white"
+            "Disponibilidade dos Quartos", on_click=lambda _: abrir_tela_quartos(), bgcolor="#8338EC", color="white"
         )
 
         page.controls.clear()
@@ -91,7 +106,6 @@ def main(page: ft.Page):
     def exibir_feedback(message, success=True):
         color = "#06D6A0" if success else "#EF476F"
         feedback_bar = ft.Text(message, color="white", size=18, weight="bold")
-
         snack_bar = ft.SnackBar(content=feedback_bar, bgcolor=color, duration=3000)
         page.overlay.append(snack_bar)
         snack_bar.open = True
@@ -105,7 +119,7 @@ def main(page: ft.Page):
             else:
                 for cliente in gerenciador.listar_clientes():
                     lista.controls.append(
-                        ft.Text(f"{cliente.nome} - {cliente.email} - {cliente.telefone} - ID: {cliente.id_unico}", color="white")
+                        ft.Text(f"{cliente.nome} - {cliente.email} - {cliente.telefone} - Quarto: {cliente.quarto} - ID: {cliente.id_unico}", color="white")
                     )
             return lista
 
@@ -144,8 +158,8 @@ def main(page: ft.Page):
                             color="white",
                         ),
                         ft.ElevatedButton(
-                            "Family",
-                            on_click=lambda e: escolher_quarto("Family"),
+                            "suite",
+                            on_click=lambda e: escolher_quarto("suite"),
                             bgcolor="#8338EC",
                             color="white",
                         ),
@@ -158,7 +172,7 @@ def main(page: ft.Page):
                 exibir_feedback("Todos os campos são obrigatórios!", success=False)
             page.update()
 
-        titulo = ft.Text("Gerenciar Clientes", size=25, weight="bold", color="white")
+        titulo = ft.Text("Gerenciar Dados dos Clientes", size=25, weight="bold", color="white")
         nome_input = ft.TextField(label="Nome Completo", width=300)
         email_input = ft.TextField(label="E-mail", width=300)
         telefone_input = ft.TextField(label="Telefone", width=300)
@@ -202,13 +216,26 @@ def main(page: ft.Page):
             return lista
 
         def cancelar_reserva(reserva):
+            confirmacao = ft.AlertDialog(
+                title=ft.Text("Confirmação"),
+                content=ft.Text(f"Confirme o cancelamento da reserva de {reserva.cliente.nome}?"),
+                actions=[
+                    ft.ElevatedButton("Sim", on_click=lambda e: confirmar_cancelamento(reserva)),
+                    ft.ElevatedButton("Não", on_click=lambda e: confirmacao.close())
+                ],
+            )
+            page.overlay.append(confirmacao)
+            confirmacao.open = True
+            page.update()
+
+        def confirmar_cancelamento(reserva):
             gerenciador.reservas.remove(reserva)
             if reserva.quarto:
                 reserva.quarto.disponivel = True
-            exibir_feedback(f"Reserva de {reserva.cliente.nome} cancelada com sucesso.", success=True)
+            exibir_feedback(f"Reserva de {reserva.cliente.nome} cancelada com sucesso", sucess=True)
             abrir_tela_reservas()
 
-        titulo = ft.Text("Gerenciar Reservas", size=25, weight="bold", color="white")
+        titulo = ft.Text("Gerenciar Reservas dos Hóspedes", size=25, weight="bold", color="white")
         btn_voltar = ft.ElevatedButton("Voltar", on_click=lambda _: tela_inicial(), bgcolor="#118AB2", color="white")
 
         page.controls.clear()
@@ -236,11 +263,14 @@ def main(page: ft.Page):
             else:
                 for quarto in gerenciador.quartos:
                     lista.controls.append(
-                        ft.Text(f"Quarto {quarto.numero} - {quarto.tipo} - {'Disponível' if quarto.disponivel else 'Ocupado'}", color="white")
+                        ft.Text(
+                            f"Quarto {quarto.numero} - {quarto.tipo} - Preço: R${quarto.preco:.2f} - {'Disponível' if quarto.disponivel else 'Ocupado'}",
+                        color="white"
                     )
+                )
             return lista
 
-        titulo = ft.Text("Gerenciar Quartos", size=25, weight="bold", color="white")
+        titulo = ft.Text("Disponibilidade dos Quartos", size=25, weight="bold", color="white")
         btn_voltar = ft.ElevatedButton("Voltar", on_click=lambda _: tela_inicial(), bgcolor="#118AB2", color="white")
 
         page.controls.clear()
@@ -253,9 +283,11 @@ def main(page: ft.Page):
                 ),
                 padding=50,
                 alignment=ft.alignment.center,
+                bgcolor="#2E2E2E",
+                border_radius=10,
+                expand=True
             )
         )
-        
         page.update()
 
     tela_inicial()
