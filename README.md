@@ -7,6 +7,8 @@ Este projeto foi criado como parte do aprendizado sobre gestão de sistemas e ad
 *Uma aplicação para gerenciar reservas e clientes em um hotel.*
 
 ---
+Refatorar a parte de controle de reservas ao reservar ou cancelar a reserva, gerando atualizações no sistema de reservas (quartos) "reserva.quarto:
+                     reserva.quarto.disponivel = True"
 
 ## 🚀 **Descrição**
 
